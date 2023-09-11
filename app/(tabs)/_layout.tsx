@@ -1,12 +1,12 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Link, Tabs } from 'expo-router';
 import { Pressable, useColorScheme } from 'react-native';
+import * as sqlite from 'expo-sqlite'
+import {useState, useEffect} from 'react'
 
 import Colors from '../../constants/Colors';
 
-/**
- * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
- */
+
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
@@ -14,7 +14,34 @@ function TabBarIcon(props: {
   return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
 }
 
+
 export default function TabLayout() {
+  // constantes 
+  const [logs,setLogs]:any = useState([])
+  const [currentLog,setCurrentLog]:any = useState(undefined)
+  const db = sqlite.openDatabase('myNewDB.db')
+  function onInit() {
+    db.transaction(tx=>{
+      tx.executeSql('CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT)',undefined, (txObj, result)=>{}, (txObj,error)=>{console.log(error); return true})
+    })
+    db.transaction(tx=>{
+      tx.executeSql('SELECT * FROM logs', undefined, (txObj, result)=>{setLogs(result.rows._array); console.log(logs);
+      }, (txObj,error)=>{console.error(error); return true
+      })
+    })
+  }
+  function generateLog() {
+    db.transaction(tx=>{
+      tx.executeSql('INSERT INTO logs (date) VALUES (?)', [new Date().toString()], (txObj, result)=>{ let log = [...logs]; setCurrentLog(log)}, (txObj,error)=>true)
+    })
+  }
+  
+  
+  useEffect(()=>{
+    onInit()
+    generateLog()
+    console.log(logs);
+  },[])
   const colorScheme = useColorScheme();
 
   return (
@@ -25,7 +52,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tab One',
+          title: 'primer tab',
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
           headerRight: () => (
             <Link href="/modal" asChild>
@@ -46,7 +73,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="two"
         options={{
-          title: 'Tab Two',
+          title: 'Segundo tab',
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
         }}
       />
